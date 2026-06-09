@@ -148,11 +148,67 @@
   #import-input { display: none; }
 
   @media (max-width: 600px) {
-    .cards-grid { grid-template-columns: 1fr 1fr; }
-    .form-grid { grid-template-columns: 1fr; }
+    /* ── LAYOUT ── */
+    body { padding: 14px 12px 80px; }
+    .container { gap: 10px; }
+
+    /* ── HEADER ── */
+    .header { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: nowrap; margin-bottom: 14px; }
+    .header h1 { font-size: 14px; }
+    .header-sub { display: none; }
+    .header-actions { gap: 4px; flex-wrap: nowrap; }
+    .btn-ghost { font-size: 10px; padding: 6px 8px; }
+    .saved-tag { font-size: 9px; }
+
+    /* ── CARDS ── */
+    .cards-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .metric { padding: 10px 12px; }
+    .metric-label { font-size: 9px; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .metric-value { font-size: 18px; }
+    .metric-sym { font-size: 13px; }
+    .metric-sub { font-size: 10px; margin-top: 3px; }
+
+    /* ── TABS ── */
+    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--border); overflow: visible; flex-wrap: wrap; }
+    .tabs .tab-btn:nth-child(4) { grid-column: 1; }
+    .tabs .tab-btn:nth-child(5) { grid-column: 2; }
+    .tab-btn { padding: 10px 4px; font-size: 10px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    .tab-content { padding: 16px 14px; }
+
+    /* ── FORMS ── */
+    .form-grid { grid-template-columns: 1fr; gap: 8px; }
     .edit-grid { grid-template-columns: 1fr; }
-    .tab-btn { padding: 10px 12px; font-size: 11px; }
-    .header { flex-direction: column; align-items: flex-start; }
+    .field label { font-size: 9px; }
+    .field input { font-size: 16px; padding: 12px; }
+
+    /* ── PREVIEW ── */
+    .preview { font-size: 11px; padding: 10px 12px; line-height: 1.6; }
+
+    /* ── BUTTONS ── */
+    .btn-row { gap: 8px; }
+    .btn { padding: 13px 16px; font-size: 13px; border-radius: 10px; }
+
+    /* ── FEE ROW ── */
+    .fee-row { gap: 6px; flex-wrap: wrap; }
+    .fee-opt { padding: 6px 10px; font-size: 11px; }
+    .fee-custom-input { width: 70px; font-size: 12px; }
+
+    /* ── HISTORY ── */
+    .hist-item { gap: 8px; padding: 10px 0; align-items: flex-start; }
+    .hist-dot { width: 24px; height: 24px; font-size: 11px; flex-shrink: 0; }
+    .hist-title { font-size: 12px; }
+    .hist-detail { font-size: 10px; line-height: 1.5; color: var(--text3); }
+    .hist-meta { gap: 4px; min-width: 70px; }
+    .hist-time { font-size: 9px; }
+    .btn-undo { padding: 4px 8px; font-size: 10px; }
+    .hist-badge { font-size: 9px; padding: 1px 5px; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-divider { font-size: 9px; margin: 16px 0 10px; padding-top: 16px; }
+
+    /* ── EDIT PANEL ── */
+    .edit-mode-panel { padding: 12px; }
+    .edit-mode-title { font-size: 10px; margin-bottom: 10px; }
   }
 </style>
 </head>
