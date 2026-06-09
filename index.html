@@ -173,7 +173,8 @@
     .header { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: nowrap; margin-bottom: 12px; }
     .header h1 { font-size: 15px; }
     .header-sub { display: none; }
-    .desktop-only-btns { display: none; }
+    .desktop-only { display: none !important; }
+    .mobile-only { display: flex !important; }
     .header-actions { gap: 4px; flex-wrap: nowrap; align-items: center; }
     .saved-tag { font-size: 9px; }
 
@@ -242,12 +243,11 @@
   </div>
   <div class="header-actions">
     <span class="saved-tag" id="saved-tag">✓ сохранено</span>
-    <span class="desktop-only-btns">
-      <button class="btn btn-ghost" onclick="exportData()">⬇ экспорт</button>
-      <button class="btn btn-ghost" onclick="document.getElementById('import-input').click()">⬆ импорт</button>
-      <button class="btn btn-ghost" onclick="clearHistory()">🗑 история</button>
-    </span>
-    <button class="btn btn-ghost btn-edit-mobile" id="edit-mode-btn" onclick="toggleEditMode()">✎</button>
+    <button class="btn btn-ghost desktop-only" onclick="exportData()">⬇ экспорт</button>
+    <button class="btn btn-ghost desktop-only" onclick="document.getElementById('import-input').click()">⬆ импорт</button>
+    <button class="btn btn-ghost desktop-only" onclick="clearHistory()">🗑 история</button>
+    <button class="btn btn-ghost desktop-only" id="edit-mode-btn" onclick="toggleEditMode()">✎ изменить</button>
+    <button class="btn btn-ghost btn-edit-mobile mobile-only" id="edit-mode-btn-m" onclick="toggleEditMode()">✎</button>
     <input type="file" id="import-input" accept=".json" onchange="importData(event)">
   </div>
 </div>
@@ -820,15 +820,18 @@ function toggleEditMode(){
   editModeOn = !editModeOn;
   const panel = document.getElementById('edit-panel');
   const btn = document.getElementById('edit-mode-btn');
+  const btnM = document.getElementById('edit-mode-btn-m');
   if(editModeOn){
     panel.style.display = 'block';
     document.getElementById('edit-rub').value = S.rub || '';
     document.getElementById('edit-usdt').value = S.usdt || '';
     document.getElementById('edit-cny').value = S.cny || '';
-    btn.textContent = '✖ закрыть';
+    if(btn) btn.textContent = '✖ закрыть';
+    if(btnM) btnM.textContent = '✖';
   } else {
     panel.style.display = 'none';
-    btn.textContent = '✎ изменить';
+    if(btn) btn.textContent = '✎ изменить';
+    if(btnM) btnM.textContent = '✎';
   }
 }
 function applyEdit(){
