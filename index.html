@@ -147,32 +147,51 @@
 
   #import-input { display: none; }
 
+  /* ── MOBILE CARDS (hidden on desktop) ── */
+  .cards-mobile { display: none; }
+  .metric-row {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    transition: border-color .2s;
+  }
+  .metric-row-left { flex: 1; }
+  .metric-row-right { flex: 1; text-align: right; }
+  .metric-row-single .metric-row-left { flex: 1; }
+  .metric-row.negative { background: rgba(255,92,122,0.08); border-color: rgba(255,92,122,0.4); }
+  .metric-row.negative .metric-label { color: var(--red); }
+
+  /* ── EDIT BUTTON MOBILE STYLE ── */
+  .btn-edit-mobile { opacity: 0.5; font-size: 16px; padding: 6px 10px; }
+  .btn-edit-mobile:hover { opacity: 1; }
+
   @media (max-width: 600px) {
     /* ── LAYOUT ── */
     body { padding: 14px 12px 80px; }
-    .container { gap: 10px; }
+    .container { gap: 8px; }
 
     /* ── HEADER ── */
-    .header { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: nowrap; margin-bottom: 14px; }
-    .header h1 { font-size: 14px; }
+    .header { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: nowrap; margin-bottom: 12px; }
+    .header h1 { font-size: 15px; }
     .header-sub { display: none; }
-    .header-actions { gap: 4px; flex-wrap: nowrap; }
-    .btn-ghost { font-size: 10px; padding: 6px 8px; }
+    .desktop-only-btns { display: none; }
+    .header-actions { gap: 4px; flex-wrap: nowrap; align-items: center; }
     .saved-tag { font-size: 9px; }
 
-    /* ── CARDS ── */
-    .cards-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
-    .metric { padding: 10px 12px; }
-    .metric-label { font-size: 9px; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .metric-value { font-size: 18px; }
-    .metric-sym { font-size: 13px; }
-    .metric-sub { font-size: 10px; margin-top: 3px; }
+    /* ── DESKTOP CARDS: hide ── */
+    .cards-grid { display: none; }
 
-    /* ── TABS ── */
-    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--border); overflow: visible; flex-wrap: wrap; }
-    .tabs .tab-btn:nth-child(4) { grid-column: 1; }
-    .tabs .tab-btn:nth-child(5) { grid-column: 2; }
-    .tab-btn { padding: 10px 4px; font-size: 10px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    /* ── MOBILE CARDS: show ── */
+    .cards-mobile { display: flex; flex-direction: column; gap: 6px; }
+    .metric-row { padding: 10px 14px; }
+    .metric-row .metric-label { font-size: 9px; letter-spacing: 0.4px; color: var(--text3); text-transform: uppercase; margin-bottom: 4px; }
+    .metric-row .metric-value { font-size: 20px; font-weight: 700; font-family: var(--font-display); line-height: 1; }
+    .metric-row .metric-sym { font-size: 14px; font-weight: 400; opacity: .7; }
+    .metric-row .metric-sub { font-size: 10px; color: var(--text3); margin-top: 3px; }
+
+    /* ── TABS: 5 buttons in one scrollable row ── */
+    .tabs { display: flex; flex-direction: row; overflow-x: auto; border-bottom: 1px solid var(--border); -webkit-overflow-scrolling: touch; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab-btn { flex: 0 0 auto; padding: 11px 14px; font-size: 11px; white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -1px; }
     .tab-content { padding: 16px 14px; }
 
     /* ── FORMS ── */
@@ -221,10 +240,12 @@
   </div>
   <div class="header-actions">
     <span class="saved-tag" id="saved-tag">✓ сохранено</span>
-    <button class="btn btn-ghost" onclick="exportData()">⬇ экспорт</button>
-    <button class="btn btn-ghost" onclick="document.getElementById('import-input').click()">⬆ импорт</button>
-    <button class="btn btn-ghost" onclick="clearHistory()">🗑 история</button>
-    <button class="btn btn-ghost" id="edit-mode-btn" onclick="toggleEditMode()">✎ изменить</button>
+    <span class="desktop-only-btns">
+      <button class="btn btn-ghost" onclick="exportData()">⬇ экспорт</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('import-input').click()">⬆ импорт</button>
+      <button class="btn btn-ghost" onclick="clearHistory()">🗑 история</button>
+    </span>
+    <button class="btn btn-ghost btn-edit-mobile" id="edit-mode-btn" onclick="toggleEditMode()">✎</button>
     <input type="file" id="import-input" accept=".json" onchange="importData(event)">
   </div>
 </div>
@@ -285,6 +306,47 @@
       <div class="metric-label">Ср. цена 1 USDT в CNY</div>
       <div class="metric-value blue" id="m-avg-cny">—</div>
       <div class="metric-sub">CNY / USDT</div>
+    </div>
+  </div>
+  <!-- Mobile combined cards -->
+  <div class="cards-mobile">
+    <div class="metric-row" id="card-rub-m">
+      <div class="metric-row-left">
+        <div class="metric-label">RUB</div>
+        <div class="metric-value cyan" id="m-rub-m">0 <span class="metric-sym">₽</span></div>
+        <div class="metric-sub" id="m-rub-sub-m">—</div>
+      </div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-row-left">
+        <div class="metric-label">USDT</div>
+        <div class="metric-value green" id="m-usdt-m">0.00 <span class="metric-sym">$</span></div>
+        <div class="metric-sub" id="m-usdt-rub-m">— RUB</div>
+      </div>
+      <div class="metric-row-right">
+        <div class="metric-label">Ср. цена USDT</div>
+        <div class="metric-value" id="m-avg-rub-m">—</div>
+        <div class="metric-sub">RUB / USDT</div>
+      </div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-row-left">
+        <div class="metric-label">CNY</div>
+        <div class="metric-value amber" id="m-cny-m">0.00 <span class="metric-sym">¥</span></div>
+        <div class="metric-sub" id="m-cny-rub-m">— RUB</div>
+      </div>
+      <div class="metric-row-right">
+        <div class="metric-label">Ср. цена CNY</div>
+        <div class="metric-value" id="m-cny-rub-rate-m">—</div>
+        <div class="metric-sub">RUB / CNY</div>
+      </div>
+    </div>
+    <div class="metric-row metric-row-single">
+      <div class="metric-row-left">
+        <div class="metric-label">Ср. цена USDT в CNY</div>
+        <div class="metric-value blue" id="m-avg-cny-m">—</div>
+        <div class="metric-sub">CNY / USDT</div>
+      </div>
     </div>
   </div>
 
@@ -503,9 +565,11 @@ window.switchTab = switchTab;
 
 // ── RENDER METRICS ──
 function renderMetrics(){
+  // Desktop cards
   document.getElementById('m-rub').innerHTML = fmtRub(S.rub) + ' <span class="metric-sym">₽</span>';
   document.getElementById('m-rub').style.color = S.rub < 0 ? 'var(--red)' : 'var(--blue)';
-  document.getElementById('m-rub-sub').textContent = S.rub < 0 ? '⚠ не хватает RUB' : S.rub > 0 ? 'нужно купить USDT' : 'пополнений не было';
+  const rubSub = S.rub < 0 ? '⚠ не хватает RUB' : S.rub > 0 ? 'нужно купить USDT' : 'пополнений не было';
+  document.getElementById('m-rub-sub').textContent = rubSub;
   const cardRub = document.getElementById('card-rub');
   if(S.rub < 0) cardRub.classList.add('negative'); else cardRub.classList.remove('negative');
   document.getElementById('m-usdt').innerHTML = fmt(S.usdt,2) + ' <span class="metric-sym">$</span>';
@@ -516,6 +580,20 @@ function renderMetrics(){
   document.getElementById('m-avg-cny').textContent = S.cnyAvgCny ? fmt(S.cnyAvgCny,4) : '—';
   document.getElementById('m-cny-rub-rate').textContent = S.cnyAvgRub ? fmt(S.cnyAvgRub,4) : '—';
   document.getElementById('hist-cnt').textContent = S.history.length;
+
+  // Mobile cards
+  document.getElementById('m-rub-m').innerHTML = fmtRub(S.rub) + ' <span class="metric-sym">₽</span>';
+  document.getElementById('m-rub-m').style.color = S.rub < 0 ? 'var(--red)' : 'var(--blue)';
+  document.getElementById('m-rub-sub-m').textContent = rubSub;
+  const cardRubM = document.getElementById('card-rub-m');
+  if(S.rub < 0) cardRubM.classList.add('negative'); else cardRubM.classList.remove('negative');
+  document.getElementById('m-usdt-m').innerHTML = fmt(S.usdt,2) + ' <span class="metric-sym">$</span>';
+  document.getElementById('m-usdt-rub-m').textContent = S.usdtAvgRub ? '≈ '+fmtRub(S.usdt*S.usdtAvgRub)+' RUB' : '— RUB';
+  document.getElementById('m-cny-m').innerHTML = fmt(S.cny,2) + ' <span class="metric-sym">¥</span>';
+  document.getElementById('m-cny-rub-m').textContent = S.cnyAvgRub ? '≈ '+fmtRub(S.cny*S.cnyAvgRub)+' RUB' : '— RUB';
+  document.getElementById('m-avg-rub-m').textContent = S.usdtAvgRub ? fmt(S.usdtAvgRub,2) : '—';
+  document.getElementById('m-avg-cny-m').textContent = S.cnyAvgCny ? fmt(S.cnyAvgCny,4) : '—';
+  document.getElementById('m-cny-rub-rate-m').textContent = S.cnyAvgRub ? fmt(S.cnyAvgRub,4) : '—';
 }
 
 // ── HISTORY ──
