@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USDT Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Unbounded:wght@300;500;700&display=swap');
+
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #111418;
+    --bg3: #1a1e24;
+    --border: #1f2530;
+    --border2: #2a3040;
+    --text: #e8edf5;
+    --text2: #7a8599;
+    --text3: #4a5568;
+    --green: #00e5a0;
+    --green-dim: rgba(0,229,160,0.08);
+    --green-dim2: rgba(0,229,160,0.15);
+    --blue: #4da6ff;
+    --blue-dim: rgba(77,166,255,0.08);
+    --red: #ff5c7a;
+    --red-dim: rgba(255,92,122,0.08);
+    --amber: #ffb340;
+    --amber-dim: rgba(255,179,64,0.08);
+    --purple: #b07fff;
+    --purple-dim: rgba(176,127,255,0.10);
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-display: 'Unbounded', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-mono); background: var(--bg); color: var(--text); min-height: 100vh; padding: 24px 16px 60px; }
+
+  /* ── HEADER ── */
+  .header { max-width: 860px; margin: 0 auto 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .header-left { display: flex; align-items: baseline; gap: 14px; }
+  .header h1 { font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+  .header-sub { font-size: 11px; color: var(--text3); }
+  .header-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .saved-tag { font-size: 10px; color: var(--green); opacity: 0; transition: opacity .3s; }
+  .saved-tag.show { opacity: 1; }
+
+  .container { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ── METRICS GRID — 2 rows × 3 cols ── */
+  .cards-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .metric { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; transition: border-color .2s; }
+  .metric:hover { border-color: var(--border2); }
+  .metric.negative { background: rgba(255,92,122,0.08); border-color: rgba(255,92,122,0.4); }
+  .metric.negative .metric-label { color: var(--red); }
+  .metric.negative:hover { border-color: var(--red); }
+  .metric-label { font-size: 10px; color: var(--text3); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 6px; }
+  .metric-value { font-size: 22px; font-weight: 700; font-family: var(--font-display); line-height: 1; }
+  .metric-value.cyan  { color: var(--blue); }
+  .metric-value.green { color: var(--green); }
+  .metric-value.amber { color: var(--amber); }
+  .metric-sub { font-size: 11px; color: var(--text3); margin-top: 5px; }
+  .metric-sym { font-size: 16px; font-weight: 400; opacity: .7; }
+
+  /* ── PANEL / TABS ── */
+  .panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .tabs { display: flex; border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn { padding: 12px 18px; font-family: var(--font-mono); font-size: 12px; color: var(--text3); background: transparent; border: none; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .15s; }
+  .tab-btn:hover { color: var(--text2); }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--green); }
+  .tab-content { display: none; padding: 20px; }
+  .tab-content.active { display: block; }
+
+  /* ── FORMS ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .form-grid.single { grid-template-columns: 1fr; }
+  .field label { display: block; font-size: 10px; color: var(--text3); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 5px; }
+  .field input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; font-family: var(--font-mono); font-size: 14px; color: var(--text); outline: none; transition: border-color .15s; -moz-appearance: textfield; }
+  .field input::-webkit-outer-spin-button, .field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .field input:focus { border-color: var(--green); }
+  .field input::placeholder { color: var(--text3); }
+
+  /* ── PREVIEW ── */
+  .preview { background: var(--bg3); border: 1px solid var(--border); border-radius: 7px; padding: 10px 14px; font-size: 12px; color: var(--text2); margin-bottom: 12px; min-height: 38px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .preview b { color: var(--text); font-weight: 500; }
+  .preview.warn { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+  .preview-sep { color: var(--border2); }
+
+  /* ── BUTTONS ── */
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn { padding: 10px 18px; border-radius: 7px; font-family: var(--font-mono); font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all .15s; display: flex; align-items: center; gap: 6px; }
+  .btn:active { transform: scale(.97); }
+  .btn-green  { background: var(--green); color: #000; border-color: var(--green); }
+  .btn-green:hover { opacity: .85; }
+  .btn-blue   { background: var(--blue); color: #000; border-color: var(--blue); }
+  .btn-blue:hover { opacity: .85; }
+  .btn-red    { background: var(--red-dim); color: var(--red); border-color: var(--red); }
+  .btn-red:hover { background: rgba(255,92,122,.2); }
+  .btn-amber  { background: var(--amber-dim); color: var(--amber); border-color: var(--amber); }
+  .btn-amber:hover { background: rgba(255,179,64,.2); }
+  .btn-purple { background: var(--purple-dim); color: var(--purple); border-color: var(--purple); }
+  .btn-purple:hover { background: rgba(176,127,255,.2); }
+  .btn-ghost  { background: transparent; color: var(--text2); border-color: var(--border2); font-size: 11px; padding: 7px 13px; }
+  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+
+  /* ── SECTION DIVIDER ── */
+  .section-divider { font-size: 10px; color: var(--text3); letter-spacing: 0.8px; text-transform: uppercase; margin: 20px 0 12px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+  /* ── FEE SELECTOR ── */
+  .fee-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .fee-row-label { font-size: 11px; color: var(--text2); margin-right: 4px; }
+  .fee-opt { padding: 5px 12px; border-radius: 20px; font-family: var(--font-mono); font-size: 11px; cursor: pointer; border: 1px solid var(--border2); background: transparent; color: var(--text3); transition: all .15s; }
+  .fee-opt:hover { color: var(--text2); border-color: var(--border2); }
+  .fee-opt.active { background: var(--green-dim2); color: var(--green); border-color: var(--green); }
+  .fee-custom-wrap { display: flex; align-items: center; gap: 6px; }
+  .fee-custom-input { width: 80px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-family: var(--font-mono); font-size: 11px; color: var(--text); outline: none; -moz-appearance: textfield; }
+  .fee-custom-input::-webkit-outer-spin-button, .fee-custom-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .fee-custom-input:focus { border-color: var(--green); }
+
+  /* ── HISTORY ── */
+  .hist-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .hist-item:last-child { border-bottom: none; }
+  .hist-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+  .hist-dot.buy       { background: var(--green-dim2); }
+  .hist-dot.sell      { background: var(--blue-dim); }
+  .hist-dot.withdraw  { background: var(--red-dim); }
+  .hist-dot.buy_cny   { background: var(--amber-dim); }
+  .hist-dot.deposit   { background: rgba(0,229,160,0.08); }
+  .hist-dot.adjust    { background: var(--purple-dim); }
+  .hist-body { flex: 1; min-width: 0; }
+  .hist-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+  .hist-title.adjust-title { color: var(--purple); }
+  .hist-detail { font-size: 11px; color: var(--text2); line-height: 1.5; }
+  .hist-meta { text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+  .hist-time { font-size: 10px; color: var(--text3); }
+  .btn-undo { background: transparent; border: 1px solid var(--border2); border-radius: 5px; padding: 3px 8px; font-family: var(--font-mono); font-size: 10px; color: var(--text3); cursor: pointer; transition: all .15s; }
+  .btn-undo:hover { border-color: var(--amber); color: var(--amber); }
+  .hist-badge { display: inline-block; background: var(--red-dim); color: var(--red); border-radius: 20px; padding: 1px 6px; font-size: 10px; margin-left: 6px; vertical-align: middle; border: 1px solid rgba(255,92,122,.3); }
+
+  /* ── EDIT MODE ── */
+  .edit-mode-panel { background: var(--purple-dim); border: 1px solid rgba(176,127,255,.25); border-radius: 10px; padding: 16px; margin-bottom: 0; }
+  .edit-mode-title { font-size: 11px; color: var(--purple); letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 14px; }
+  .edit-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 12px; }
+
+  /* ── EMPTY ── */
+  .empty { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; }
+  .empty-icon { font-size: 32px; margin-bottom: 8px; }
+
+  #import-input { display: none; }
+
+  @media (max-width: 600px) {
+    .cards-grid { grid-template-columns: 1fr 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .edit-grid { grid-template-columns: 1fr; }
+    .tab-btn { padding: 10px 12px; font-size: 11px; }
+    .header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>USDT TRACKER</h1>
+    <span class="header-sub">локальный</span>
+  </div>
+  <div class="header-actions">
+    <span class="saved-tag" id="saved-tag">✓ сохранено</span>
+    <button class="btn btn-ghost" onclick="exportData()">⬇ экспорт</button>
+    <button class="btn btn-ghost" onclick="document.getElementById('import-input').click()">⬆ импорт</button>
+    <button class="btn btn-ghost" onclick="clearHistory()">🗑 история</button>
+    <button class="btn btn-ghost" id="edit-mode-btn" onclick="toggleEditMode()">✎ изменить</button>
+    <input type="file" id="import-input" accept=".json" onchange="importData(event)">
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ══ EDIT MODE PANEL ══ -->
+  <div class="edit-mode-panel" id="edit-panel" style="display:none">
+    <div class="edit-mode-title">⚠ Режим прямого изменения балансов — средние цены не затрагиваются</div>
+    <div class="edit-grid">
+      <div class="field">
+        <label>RUB баланс</label>
+        <input type="number" id="edit-rub" placeholder="0" min="0" step="any">
+      </div>
+      <div class="field">
+        <label>USDT баланс</label>
+        <input type="number" id="edit-usdt" placeholder="0" min="0" step="any">
+      </div>
+      <div class="field">
+        <label>CNY баланс</label>
+        <input type="number" id="edit-cny" placeholder="0" min="0" step="any">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-purple" onclick="applyEdit()">✎ Применить изменения</button>
+      <button class="btn btn-ghost" onclick="toggleEditMode()">Отмена</button>
+    </div>
+  </div>
+
+  <!-- ══ METRICS ══ -->
+  <div class="cards-grid">
+    <div class="metric" id="card-rub">
+      <div class="metric-label">RUB Баланс</div>
+      <div class="metric-value cyan" id="m-rub">0 <span class="metric-sym">₽</span></div>
+      <div class="metric-sub" id="m-rub-sub">пополнений не было</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">USDT Баланс</div>
+      <div class="metric-value green" id="m-usdt">0.00 <span class="metric-sym">$</span></div>
+      <div class="metric-sub" id="m-usdt-rub">— RUB</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">CNY Баланс</div>
+      <div class="metric-value amber" id="m-cny">0.00 <span class="metric-sym">¥</span></div>
+      <div class="metric-sub" id="m-cny-rub">— RUB</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Ср. цена 1 CNY в RUB</div>
+      <div class="metric-value" id="m-cny-rub-rate">—</div>
+      <div class="metric-sub">RUB / CNY</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Ср. цена 1 USDT в RUB</div>
+      <div class="metric-value" id="m-avg-rub">—</div>
+      <div class="metric-sub">RUB / USDT</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Ср. цена 1 USDT в CNY</div>
+      <div class="metric-value blue" id="m-avg-cny">—</div>
+      <div class="metric-sub">CNY / USDT</div>
+    </div>
+  </div>
+
+  <!-- ══ PANEL ══ -->
+  <div class="panel">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('deposit')">+ Пополнить RUB</button>
+      <button class="tab-btn" onclick="switchTab('buy')">+ Купить USDT</button>
+      <button class="tab-btn" onclick="switchTab('sell')">→ Продать USDT</button>
+      <button class="tab-btn" onclick="switchTab('withdraw')">− Списать CNY</button>
+      <button class="tab-btn" onclick="switchTab('history')">История <span class="hist-badge" id="hist-cnt">0</span></button>
+    </div>
+
+    <!-- DEPOSIT RUB -->
+    <div class="tab-content active" id="tab-deposit">
+      <div class="form-grid single">
+        <div class="field">
+          <label>Сумма RUB от клиента</label>
+          <input type="number" id="dep-rub" placeholder="50000" min="0" step="any" oninput="calcDeposit()">
+        </div>
+      </div>
+      <div class="preview" id="dep-preview">Введите сумму для предварительного расчёта</div>
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="doDeposit()">+ Пополнить</button>
+        <button class="btn btn-ghost" onclick="clearDeposit()">Очистить</button>
+      </div>
+    </div>
+
+    <!-- BUY USDT -->
+    <div class="tab-content" id="tab-buy">
+      <div class="form-grid">
+        <div class="field">
+          <label>Количество USDT</label>
+          <input type="number" id="buy-usdt" placeholder="100" min="0" step="any" oninput="calcBuy()">
+        </div>
+        <div class="field">
+          <label>Курс (RUB за 1 USDT)</label>
+          <input type="number" id="buy-rate" placeholder="90.50" min="0" step="any" oninput="calcBuy()">
+        </div>
+      </div>
+      <div class="preview" id="buy-preview">Введите данные для предварительного расчёта</div>
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="doBuy()">+ Купить</button>
+        <button class="btn btn-ghost" onclick="clearBuy()">Очистить</button>
+      </div>
+    </div>
+
+    <!-- SELL USDT -->
+    <div class="tab-content" id="tab-sell">
+      <div class="form-grid">
+        <div class="field">
+          <label>Количество USDT (к продаже)</label>
+          <input type="number" id="sell-usdt" placeholder="50" min="0" step="any" oninput="calcSell()">
+        </div>
+        <div class="field">
+          <label>Курс (CNY за 1 USDT)</label>
+          <input type="number" id="sell-rate" placeholder="7.20" min="0" step="any" oninput="calcSell()">
+        </div>
+      </div>
+
+      <!-- Fee selector -->
+      <div class="fee-row">
+        <span class="fee-row-label">Комиссия:</span>
+        <button class="fee-opt active" id="fee-0" onclick="setFee('0')">Без комиссии</button>
+        <button class="fee-opt" id="fee-02" onclick="setFee('0.2')">0.2 USDT</button>
+        <button class="fee-opt" id="fee-1" onclick="setFee('1')">1 USDT</button>
+        <div class="fee-custom-wrap">
+          <input type="number" class="fee-custom-input" id="fee-custom" placeholder="своя" min="0" step="any" oninput="setFee('custom')">
+          <span style="font-size:11px;color:var(--text3)">USDT</span>
+        </div>
+      </div>
+
+      <div class="preview" id="sell-preview">Введите данные для предварительного расчёта</div>
+      <div class="btn-row">
+        <button class="btn btn-blue" onclick="doSell()">→ Продать</button>
+        <button class="btn btn-ghost" onclick="clearSell()">Очистить</button>
+      </div>
+
+      <!-- Buy CNY for RUB -->
+      <div class="section-divider">Купить CNY за RUB</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Количество CNY</label>
+          <input type="number" id="buycny-amount" placeholder="500" min="0" step="any" oninput="calcBuyCny()">
+        </div>
+        <div class="field">
+          <label>Курс (RUB за 1 CNY)</label>
+          <input type="number" id="buycny-rate" placeholder="12.50" min="0" step="any" oninput="calcBuyCny()">
+        </div>
+      </div>
+      <div class="preview" id="buycny-preview">Введите данные для предварительного расчёта</div>
+      <div class="btn-row">
+        <button class="btn btn-amber" onclick="doBuyCny()">+ Купить CNY</button>
+        <button class="btn btn-ghost" onclick="clearBuyCny()">Очистить</button>
+      </div>
+    </div>
+
+    <!-- WITHDRAW CNY -->
+    <div class="tab-content" id="tab-withdraw">
+      <div class="form-grid single">
+        <div class="field">
+          <label>Сумма CNY для списания</label>
+          <input type="number" id="w-cny" placeholder="500" min="0" step="any" oninput="calcWithdraw()">
+        </div>
+      </div>
+      <div class="preview" id="w-preview">Введите сумму для предварительного расчёта</div>
+      <div class="btn-row">
+        <button class="btn btn-red" onclick="doWithdraw()">− Списать CNY</button>
+        <button class="btn btn-ghost" onclick="clearWithdraw()">Очистить</button>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="tab-content" id="tab-history">
+      <div id="hist-list"></div>
+      <div id="hist-empty" class="empty">
+        <div class="empty-icon">📋</div>
+        История пуста — выполните первую операцию
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC63DCrAodmpPuE4OeFhZAJ8H8YuoYjoE8",
+  authDomain: "wetracker-62f90.firebaseapp.com",
+  databaseURL: "https://wetracker-62f90-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "wetracker-62f90",
+  storageBucket: "wetracker-62f90.firebasestorage.app",
+  messagingSenderId: "295698145741",
+  appId: "1:295698145741:web:f900865c07475af3e62484"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const DB_REF = ref(db, 'tracker');
+
+// ── STATE ──
+let S = {rub:0, usdt:0, usdtAvgRub:0, cny:0, cnyAvgCny:0, cnyAvgRub:0, history:[]};
+let saveTimer = null;
+let currentFee = 0;
+let isRemoteUpdate = false; // флаг чтобы не зациклить
+
+// ── FIREBASE: подписка на изменения ──
+onValue(DB_REF, (snapshot) => {
+  const data = snapshot.val();
+  if (!data) { renderMetrics(); renderHistory(); return; }
+  if (!data.history) data.history = [];
+  isRemoteUpdate = true;
+  S = data;
+  renderMetrics();
+  renderHistory();
+  isRemoteUpdate = false;
+});
+
+// ── FIREBASE: сохранение ──
+function saveState(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(trySave, 400);
+}
+
+function trySave(){
+  const toStore = {
+    rub: S.rub,
+    usdt: S.usdt,
+    usdtAvgRub: S.usdtAvgRub,
+    cny: S.cny,
+    cnyAvgCny: S.cnyAvgCny,
+    cnyAvgRub: S.cnyAvgRub,
+    history: S.history.map(h => ({id:h.id, type:h.type, title:h.title, detail:h.detail, time:h.time}))
+  };
+  set(DB_REF, toStore)
+    .then(() => flashSaved())
+    .catch(e => alert('Ошибка сохранения: ' + e.message));
+}
+
+function flashSaved(){
+  const el = document.getElementById('saved-tag');
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 1500);
+}
+
+function fmt(n,d=2){ return Number(n).toFixed(d); }
+function fmtRub(n){ return Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,' '); }
+function now(){
+  const d = new Date();
+  return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'2-digit'})
+    + ' ' + d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+}
+function snap(){
+  return {rub:S.rub, usdt:S.usdt, usdtAvgRub:S.usdtAvgRub, cny:S.cny, cnyAvgCny:S.cnyAvgCny, cnyAvgRub:S.cnyAvgRub};
+}
+
+// ── TABS ──
+const TAB_LIST = ['deposit','buy','sell','withdraw','history'];
+function switchTab(t){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.tab-btn')[TAB_LIST.indexOf(t)].classList.add('active');
+  document.getElementById('tab-'+t).classList.add('active');
+}
+window.switchTab = switchTab;
+
+// ── RENDER METRICS ──
+function renderMetrics(){
+  document.getElementById('m-rub').innerHTML = fmtRub(S.rub) + ' <span class="metric-sym">₽</span>';
+  document.getElementById('m-rub').style.color = S.rub < 0 ? 'var(--red)' : 'var(--blue)';
+  document.getElementById('m-rub-sub').textContent = S.rub < 0 ? '⚠ не хватает RUB' : S.rub > 0 ? 'нужно купить USDT' : 'пополнений не было';
+  const cardRub = document.getElementById('card-rub');
+  if(S.rub < 0) cardRub.classList.add('negative'); else cardRub.classList.remove('negative');
+  document.getElementById('m-usdt').innerHTML = fmt(S.usdt,2) + ' <span class="metric-sym">$</span>';
+  document.getElementById('m-usdt-rub').textContent = S.usdtAvgRub ? '≈ '+fmtRub(S.usdt*S.usdtAvgRub)+' RUB' : '— RUB';
+  document.getElementById('m-cny').innerHTML = fmt(S.cny,2) + ' <span class="metric-sym">¥</span>';
+  document.getElementById('m-cny-rub').textContent = S.cnyAvgRub ? '≈ '+fmtRub(S.cny*S.cnyAvgRub)+' RUB' : '— RUB';
+  document.getElementById('m-avg-rub').textContent = S.usdtAvgRub ? fmt(S.usdtAvgRub,2) : '—';
+  document.getElementById('m-avg-cny').textContent = S.cnyAvgCny ? fmt(S.cnyAvgCny,4) : '—';
+  document.getElementById('m-cny-rub-rate').textContent = S.cnyAvgRub ? fmt(S.cnyAvgRub,4) : '—';
+  document.getElementById('hist-cnt').textContent = S.history.length;
+}
+
+// ── HISTORY ──
+function pushHistory(type, title, detail, prev){
+  const id = Date.now() + Math.random();
+  S.history.unshift({id, type, title, detail, time:now(), prev});
+  saveState();
+  renderMetrics();
+  renderHistory();
+}
+
+function undoAction(id){
+  const idx = S.history.findIndex(h=>h.id===id);
+  if(idx<0) return;
+  const h = S.history[idx];
+  if(!h.prev){ alert('Отмена недоступна: операция загружена из сохранения.'); return; }
+  if(!confirm('Отменить: «'+h.title+'»?')) return;
+  Object.assign(S, h.prev);
+  S.history.splice(idx,1);
+  saveState(); renderMetrics(); renderHistory();
+}
+
+function renderHistory(){
+  const list = document.getElementById('hist-list');
+  const empty = document.getElementById('hist-empty');
+  if(!S.history.length){ list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  const icons = {buy:'💚', sell:'🔵', withdraw:'🔴', buy_cny:'🟡', deposit:'💵', adjust:'✏️'};
+  list.innerHTML = S.history.map(h=>`
+    <div class="hist-item">
+      <div class="hist-dot ${h.type}">${icons[h.type]||'⚪'}</div>
+      <div class="hist-body">
+        <div class="hist-title${h.type==='adjust'?' adjust-title':''}">${h.title}</div>
+        <div class="hist-detail">${h.detail}</div>
+      </div>
+      <div class="hist-meta">
+        <span class="hist-time">${h.time}</span>
+        <button class="btn-undo" data-id="${h.id}">↩ отменить</button>
+      </div>
+    </div>`).join('');
+  list.querySelectorAll('.btn-undo').forEach(btn=>{
+    btn.addEventListener('click',()=>undoAction(Number(btn.dataset.id)));
+  });
+}
+
+// ── DEPOSIT RUB ──
+function calcDeposit(){
+  const a = parseFloat(document.getElementById('dep-rub').value)||0;
+  const el = document.getElementById('dep-preview');
+  if(!a){ el.className='preview'; el.innerHTML='Введите сумму для предварительного расчёта'; return; }
+  el.className='preview';
+  el.innerHTML=`Пополнить: <b>${fmtRub(a)} RUB</b> <span class="preview-sep">|</span> Новый баланс RUB: <b>${fmtRub(S.rub+a)} ₽</b>`;
+}
+function clearDeposit(){ document.getElementById('dep-rub').value=''; calcDeposit(); }
+function doDeposit(){
+  const a = parseFloat(document.getElementById('dep-rub').value)||0;
+  if(!a){ alert('Введите сумму RUB'); return; }
+  const prev = snap();
+  S.rub += a;
+  pushHistory('deposit', `Пополнено ${fmtRub(a)} RUB`, `Баланс RUB: ${fmtRub(S.rub)} ₽`, prev);
+  clearDeposit();
+}
+window.calcDeposit=calcDeposit; window.clearDeposit=clearDeposit; window.doDeposit=doDeposit;
+
+// ── BUY USDT ──
+function calcBuy(){
+  const u = parseFloat(document.getElementById('buy-usdt').value)||0;
+  const r = parseFloat(document.getElementById('buy-rate').value)||0;
+  const el = document.getElementById('buy-preview');
+  if(!u||!r){ el.className='preview'; el.innerHTML='Введите данные для предварительного расчёта'; return; }
+  const total = u*r;
+  const newQty = S.usdt+u;
+  const newAvg = (S.usdt*S.usdtAvgRub+total)/newQty;
+  const newRub = S.rub - total;
+  el.className='preview';
+  el.innerHTML=`Спишется: <b>${fmtRub(total)} RUB</b> <span class="preview-sep">|</span> Остаток RUB: <b>${fmtRub(newRub)} ₽</b> <span class="preview-sep">|</span> Ср. цена: <b>${fmt(newAvg,2)} RUB/USDT</b>`;
+}
+function clearBuy(){ document.getElementById('buy-usdt').value=''; document.getElementById('buy-rate').value=''; calcBuy(); }
+function doBuy(){
+  const u = parseFloat(document.getElementById('buy-usdt').value)||0;
+  const r = parseFloat(document.getElementById('buy-rate').value)||0;
+  if(!u||!r){ alert('Заполните количество USDT и курс'); return; }
+  const prev = snap();
+  const total = u*r;
+  const newQty = S.usdt+u;
+  S.usdtAvgRub = (S.usdt*S.usdtAvgRub+total)/newQty;
+  S.usdt = newQty;
+  S.rub = S.rub - total;
+  pushHistory('buy',
+    `Куплено ${fmt(u,2)} USDT по ${fmt(r,2)} RUB`,
+    `Потрачено: ${fmtRub(total)} RUB | Баланс: ${fmt(S.usdt,2)} USDT | Ср. цена: ${fmt(S.usdtAvgRub,2)} RUB/USDT | RUB: ${fmtRub(S.rub)} ₽`,
+    prev);
+  clearBuy();
+}
+window.calcBuy=calcBuy; window.clearBuy=clearBuy; window.doBuy=doBuy;
+
+// ── FEE SELECTOR ──
+function setFee(val){
+  document.querySelectorAll('.fee-opt').forEach(b=>b.classList.remove('active'));
+  if(val === 'custom'){
+    const cv = parseFloat(document.getElementById('fee-custom').value)||0;
+    currentFee = cv;
+  } else {
+    currentFee = parseFloat(val);
+    document.getElementById('fee-'+val.replace('.','')+'').classList.add('active');
+    document.getElementById('fee-custom').value = '';
+  }
+  calcSell();
+}
+window.setFee=setFee;
+
+// ── SELL USDT ──
+function calcSell(){
+  const u = parseFloat(document.getElementById('sell-usdt').value)||0;
+  const r = parseFloat(document.getElementById('sell-rate').value)||0;
+  const el = document.getElementById('sell-preview');
+  if(!u||!r){ el.className='preview'; el.innerHTML='Введите данные для предварительного расчёта'; return; }
+  const spent = u + currentFee;
+  if(spent > S.usdt){
+    el.className='preview warn';
+    el.innerHTML=`Недостаточно USDT. Нужно: ${fmt(spent,2)}${currentFee>0?' (вкл. '+fmt(currentFee,2)+' USDT комиссии)':''}, есть: ${fmt(S.usdt,2)}`;
+    return;
+  }
+  const cnyGot = u*r;
+  const realRate = cnyGot / spent;
+  const newCny = S.cny + cnyGot;
+  const newAvgCny = (S.cny * S.cnyAvgCny + cnyGot * realRate) / newCny;
+  const feeNote = currentFee > 0
+    ? `<span class="preview-sep">|</span> Комиссия: <b>${fmt(currentFee,2)} USDT</b>`
+    : `<span class="preview-sep">|</span> <span style="color:var(--green)">Без комиссии</span>`;
+  el.className='preview';
+  el.innerHTML=`Получите: <b>${fmt(cnyGot,2)} CNY</b> <span class="preview-sep">|</span> Спишется: <b>${fmt(spent,2)} USDT</b> ${feeNote} <span class="preview-sep">|</span> Реальная цена: <b>${fmt(realRate,4)} CNY/USDT</b> <span class="preview-sep">|</span> Новая ср. цена: <b>${fmt(newAvgCny,4)} CNY/USDT</b>`;
+}
+function clearSell(){
+  document.getElementById('sell-usdt').value='';
+  document.getElementById('sell-rate').value='';
+  calcSell();
+}
+function doSell(){
+  const u = parseFloat(document.getElementById('sell-usdt').value)||0;
+  const r = parseFloat(document.getElementById('sell-rate').value)||0;
+  if(!u||!r){ alert('Заполните количество USDT и курс'); return; }
+  const spent = u + currentFee;
+  if(spent > S.usdt){ alert('Недостаточно USDT (с учётом комиссии)'); return; }
+  const prev = snap();
+  const cnyGot = u*r;
+  const realRate = cnyGot / spent;
+  const newCny = S.cny + cnyGot;
+  S.cnyAvgCny = (S.cny * S.cnyAvgCny + cnyGot * realRate) / newCny;
+  S.cny = newCny;
+  S.usdt -= spent;
+  if(S.usdt < 1e-8) S.usdt = 0;
+  S.cnyAvgRub = S.cnyAvgCny > 0 ? S.usdtAvgRub / S.cnyAvgCny : S.cnyAvgRub;
+  const feeStr = currentFee > 0 ? `Комиссия: ${fmt(currentFee,2)} USDT` : 'Без комиссии';
+  pushHistory('sell',
+    `Продано ${fmt(u,2)} USDT по ${fmt(r,4)} CNY`,
+    `Получено: ${fmt(cnyGot,2)} CNY | ${feeStr} | Реальная цена: ${fmt(realRate,4)} CNY/USDT | Ср. 1 USDT = ${fmt(S.cnyAvgCny,4)} CNY | Ср. 1 CNY = ${fmt(S.cnyAvgRub,4)} RUB`,
+    prev);
+  clearSell();
+}
+window.calcSell=calcSell; window.clearSell=clearSell; window.doSell=doSell;
+
+// ── BUY CNY for RUB ──
+function calcBuyCny(){
+  const a = parseFloat(document.getElementById('buycny-amount').value)||0;
+  const r = parseFloat(document.getElementById('buycny-rate').value)||0;
+  const el = document.getElementById('buycny-preview');
+  if(!a||!r){ el.className='preview'; el.innerHTML='Введите данные для предварительного расчёта'; return; }
+  const rubSpent = a*r;
+  const newCny = S.cny+a;
+  const newAvgRub = (S.cny*S.cnyAvgRub + a*r) / newCny;
+  el.className='preview';
+  el.innerHTML=`Потрачено: <b>${fmtRub(rubSpent)} RUB</b> <span class="preview-sep">|</span> Новый баланс CNY: <b>${fmt(newCny,2)}</b> <span class="preview-sep">|</span> Новая ср. цена: <b>${fmt(newAvgRub,4)} RUB/CNY</b>`;
+}
+function clearBuyCny(){ document.getElementById('buycny-amount').value=''; document.getElementById('buycny-rate').value=''; calcBuyCny(); }
+function doBuyCny(){
+  const a = parseFloat(document.getElementById('buycny-amount').value)||0;
+  const r = parseFloat(document.getElementById('buycny-rate').value)||0;
+  if(!a||!r){ alert('Заполните количество CNY и курс'); return; }
+  const prev = snap();
+  const rubSpent = a*r;
+  const newCny = S.cny+a;
+  S.cnyAvgRub = (S.cny*S.cnyAvgRub + a*r) / newCny;
+  S.cnyAvgCny = S.usdtAvgRub > 0 ? S.usdtAvgRub/S.cnyAvgRub : S.cnyAvgCny;
+  S.cny = newCny;
+  S.rub = S.rub - rubSpent;
+  pushHistory('buy_cny',
+    `Куплено ${fmt(a,2)} CNY по ${fmt(r,4)} RUB`,
+    `Потрачено: ${fmtRub(rubSpent)} RUB | Баланс RUB: ${fmtRub(S.rub)} ₽ | Баланс CNY: ${fmt(S.cny,2)} | Ср. цена: ${fmt(S.cnyAvgRub,4)} RUB/CNY`,
+    prev);
+  clearBuyCny();
+}
+window.calcBuyCny=calcBuyCny; window.clearBuyCny=clearBuyCny; window.doBuyCny=doBuyCny;
+
+// ── WITHDRAW CNY ──
+function calcWithdraw(){
+  const a = parseFloat(document.getElementById('w-cny').value)||0;
+  const el = document.getElementById('w-preview');
+  if(!a){ el.className='preview'; el.innerHTML='Введите сумму для предварительного расчёта'; return; }
+  if(a > S.cny){ el.className='preview warn'; el.innerHTML=`Недостаточно CNY. Есть: ${fmt(S.cny,2)}`; return; }
+  const rub = a * S.cnyAvgRub;
+  el.className='preview';
+  el.innerHTML=`Списать: <b>${fmt(a,2)} CNY</b> <span class="preview-sep">|</span> Это ≈ <b>${fmtRub(rub)} RUB</b> <span class="preview-sep">|</span> Остаток: <b>${fmt(S.cny-a,2)} CNY</b>`;
+}
+function clearWithdraw(){ document.getElementById('w-cny').value=''; calcWithdraw(); }
+function doWithdraw(){
+  const a = parseFloat(document.getElementById('w-cny').value)||0;
+  if(!a){ alert('Введите сумму CNY'); return; }
+  if(a > S.cny){ alert('Недостаточно CNY'); return; }
+  const prev = snap();
+  const rub = a * S.cnyAvgRub;
+  S.cny -= a;
+  if(S.cny < 1e-8){ S.cny=0; S.cnyAvgCny=0; }
+  pushHistory('withdraw', `Списано ${fmt(a,2)} CNY`, `≈ ${fmtRub(rub)} RUB | Остаток: ${fmt(S.cny,2)} CNY`, prev);
+  clearWithdraw();
+}
+window.calcWithdraw=calcWithdraw; window.clearWithdraw=clearWithdraw; window.doWithdraw=doWithdraw;
+
+// ── EDIT MODE ──
+let editModeOn = false;
+function toggleEditMode(){
+  editModeOn = !editModeOn;
+  const panel = document.getElementById('edit-panel');
+  const btn = document.getElementById('edit-mode-btn');
+  if(editModeOn){
+    panel.style.display = 'block';
+    document.getElementById('edit-rub').value = S.rub || '';
+    document.getElementById('edit-usdt').value = S.usdt || '';
+    document.getElementById('edit-cny').value = S.cny || '';
+    btn.textContent = '✖ закрыть';
+  } else {
+    panel.style.display = 'none';
+    btn.textContent = '✎ изменить';
+  }
+}
+function applyEdit(){
+  const rawRub  = document.getElementById('edit-rub').value.trim();
+  const rawUsdt = document.getElementById('edit-usdt').value.trim();
+  const rawCny  = document.getElementById('edit-cny').value.trim();
+  const newRub  = rawRub  !== '' ? parseFloat(rawRub)  : S.rub;
+  const newUsdt = rawUsdt !== '' ? parseFloat(rawUsdt) : S.usdt;
+  const newCny  = rawCny  !== '' ? parseFloat(rawCny)  : S.cny;
+  if(isNaN(newRub) || isNaN(newUsdt) || isNaN(newCny)){ alert('Введите корректные числа'); return; }
+  const prev = snap();
+  const changes = [];
+  if(newRub  !== S.rub)  changes.push(`RUB: ${fmtRub(S.rub)} → ${fmtRub(newRub)}`);
+  if(newUsdt !== S.usdt) changes.push(`USDT: ${fmt(S.usdt,4)} → ${fmt(newUsdt,4)}`);
+  if(newCny  !== S.cny)  changes.push(`CNY: ${fmt(S.cny,2)} → ${fmt(newCny,2)}`);
+  S.rub  = newRub;
+  S.usdt = newUsdt;
+  S.cny  = newCny;
+  pushHistory('adjust', '✎ Прямое изменение баланса',
+    changes.length ? changes.join(' | ') : 'Значения не изменились', prev);
+  trySave();
+  toggleEditMode();
+}
+window.toggleEditMode=toggleEditMode; window.applyEdit=applyEdit;
+
+// ── EXPORT / IMPORT / CLEAR ──
+function exportData(){
+  const blob = new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `usdt_tracker_${new Date().toLocaleDateString('ru-RU').replace(/\./g,'-')}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function importData(event){
+  const file = event.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const d = JSON.parse(e.target.result);
+      if(typeof d.usdt==='undefined') throw new Error('Неверный формат');
+      if(!confirm(`Загрузить данные?\nUSDT: ${d.usdt}, CNY: ${d.cny}\nТекущие данные будут заменены.`)) return;
+      S = d; if(!S.history) S.history=[];
+      trySave(); renderMetrics(); renderHistory();
+    } catch(err){ alert('Ошибка импорта: '+err.message); }
+  };
+  reader.readAsText(file); event.target.value='';
+}
+function clearHistory(){
+  if(!confirm(`Очистить историю (${S.history.length} записей)?\nБалансы сохранятся.`)) return;
+  S.history=[]; trySave(); renderHistory(); renderMetrics();
+}
+window.exportData=exportData; window.importData=importData; window.clearHistory=clearHistory;
+
+// ── ENTER KEY ──
+const TAB_ACTIONS = { deposit: doDeposit, buy: doBuy, sell: doSell, withdraw: doWithdraw };
+const FIELD_ORDER = {
+  deposit:  ['dep-rub'],
+  buy:      ['buy-usdt', 'buy-rate'],
+  sell:     ['sell-usdt', 'sell-rate', 'buycny-amount', 'buycny-rate'],
+  withdraw: ['w-cny'],
+  history:  []
+};
+const EDIT_FIELDS = ['edit-rub', 'edit-usdt', 'edit-cny'];
+
+document.addEventListener('keydown', function(e){
+  const focused = document.activeElement;
+  if(!focused) return;
+  const fid = focused.id;
+  const isTab      = e.key === 'Tab' && !e.shiftKey;
+  const isShiftTab = e.key === 'Tab' &&  e.shiftKey;
+  const isSpace      = e.key === ' ' && !e.shiftKey;
+  const isShiftSpace  = e.key === ' ' &&  e.shiftKey;
+  let fields = null;
+  const editPanel = document.getElementById('edit-panel');
+  if(editPanel && editPanel.style.display !== 'none' && EDIT_FIELDS.includes(fid)){
+    fields = EDIT_FIELDS;
+  } else {
+    const activeTab = TAB_LIST.find(t => {
+      const el = document.getElementById('tab-'+t);
+      return el && el.classList.contains('active');
+    });
+    if(activeTab) fields = FIELD_ORDER[activeTab] || [];
+  }
+  if(fields && fields.includes(fid)){
+    const idx = fields.indexOf(fid);
+    let move = 0;
+    if(isSpace || isTab)           move = +1;
+    if(isShiftSpace || isShiftTab) move = -1;
+    if(move !== 0){
+      const nextIdx = idx + move;
+      if(nextIdx >= 0 && nextIdx < fields.length){
+        e.preventDefault();
+        const nextEl = document.getElementById(fields[nextIdx]);
+        if(nextEl){ nextEl.focus(); nextEl.select(); }
+        return;
+      }
+    }
+  }
+  if(e.key !== 'Enter') return;
+  if(fid === 'fee-custom') return;
+  const activeTab = TAB_LIST.find(t => {
+    const el = document.getElementById('tab-'+t);
+    return el && el.classList.contains('active');
+  });
+  if(!activeTab || !TAB_ACTIONS[activeTab]) return;
+  if(activeTab === 'sell' && (fid === 'buycny-amount' || fid === 'buycny-rate')){ doBuyCny(); return; }
+  TAB_ACTIONS[activeTab]();
+});
+
+</script>
+</body>
+</html>
