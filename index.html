@@ -382,8 +382,12 @@ onValue(DB_REF, (snapshot) => {
   const data = snapshot.val();
   if (!data) { renderMetrics(); renderHistory(); return; }
   if (!data.history) data.history = [];
+  // Сохраняем prev из памяти, чтобы отмена работала
+  const prevMap = {};
+  S.history.forEach(h => { if(h.prev) prevMap[h.id] = h.prev; });
   isRemoteUpdate = true;
   S = data;
+  S.history.forEach(h => { if(!h.prev && prevMap[h.id]) h.prev = prevMap[h.id]; });
   renderMetrics();
   renderHistory();
   isRemoteUpdate = false;
@@ -403,7 +407,7 @@ function trySave(){
     cny: S.cny,
     cnyAvgCny: S.cnyAvgCny,
     cnyAvgRub: S.cnyAvgRub,
-    history: S.history.map(h => ({id:h.id, type:h.type, title:h.title, detail:h.detail, time:h.time}))
+    history: S.history.map(h => ({id:h.id, type:h.type, title:h.title, detail:h.detail, time:h.time, prev:h.prev||null}))
   };
   set(DB_REF, toStore)
     .then(() => flashSaved())
